@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Group Accommodation Allocation</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .input-group { margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        table, th, td { border: 1px solid black; }
+        th, td { padding: 10px; text-align: left; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload Group and Hostel Information</h1>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="input-group">
+                <label for="groupFile">Group Information CSV:</label>
+                <input type="file" id="groupFile" name="groupFile" accept=".csv">
+            </div>
+            <div class="input-group">
+                <label for="hostelFile">Hostel Information CSV:</label>
+                <input type="file" id="hostelFile" name="hostelFile" accept=".csv">
+            </div>
+            <button type="submit">Upload</button>
+        </form>
+        <div id="results"></div>
+        <a id="downloadLink" href="/download" style="display: none;">Download Allocations CSV</a>
+    </div>
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const groupFile = document.getElementById('groupFile').files[0];
+            const hostelFile = document.getElementById('hostelFile').files[0];
+            const formData = new FormData();
+            formData.append('groupFile', groupFile);
+            formData.append('hostelFile', hostelFile);
+
+            try {
+                console.log("Uploading files...");
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log("Files uploaded successfully, displaying results...");
+                displayResults(result);
+                document.getElementById('downloadLink').style.display = 'block';
+            } catch (error) {
+                console.error("Error during file upload:", error);
+                alert("An error occurred during file upload. Please check the console for more details.");
+            }
+        });
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            let html = '<h2>Room Allocations</h2>';
+            html += '<table>';
+            html += '<tr><th>Group ID</th><th>Hostel Name</th><th>Room Number</th><th>Members Allocated</th></tr>';
+            data.forEach(allocation => {
+                html += `<tr>
+                    <td>${allocation['Group ID']}</td>
+                    <td>${allocation['Hostel Name']}</td>
+                    <td>${allocation['Room Number']}</td>
+                    <td>${allocation['Members Allocated']}</td>
+                </tr>`;
+            });
+            html += '</table>';
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
